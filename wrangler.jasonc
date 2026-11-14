@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "studio-dw",
+  "compatibility_date": "2026-11-14",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "studio-dw-db",
+      "database_id": "a444a6fc-5500-41ce-afc5-a9e85a31fb28"
+    }
+  ]
+}
