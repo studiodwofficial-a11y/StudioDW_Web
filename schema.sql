@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS cms_data (
+  id TEXT PRIMARY KEY,
+  data TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO cms_data (id, data)
+VALUES ('main', '{}');
