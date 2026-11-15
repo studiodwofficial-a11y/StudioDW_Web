@@ -1,9 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "studio-dw",
+  "main": "worker.js",
   "compatibility_date": "2026-11-14",
   "assets": {
     "directory": ".",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
   "d1_databases": [
