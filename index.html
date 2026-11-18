@@ -331,6 +331,11 @@ body.light .footer-main .logo { filter:drop-shadow(0 1px 2px #b6b9a9) drop-shado
 body.light .inquiry-form select option { background:#f5f5ef; color:#151515; }
 .inquiry-form textarea { resize:vertical; }
 .inquiry-wide { grid-column:1/-1; }
+.inquiry-quote { padding:14px 16px; border:1px solid var(--estimate-border, var(--line)); border-radius:12px; font-size:13px; }
+.inquiry-quote h3 { margin:0 0 8px; font-size:14px; }
+.inquiry-quote p { margin:6px 0 0; color:var(--estimate-muted, var(--muted)); }
+.inquiry-quote ul { margin:8px 0 0; padding-inline-start:20px; }
+.inquiry-quote li + li { margin-top:4px; }
 .inquiry-actions { display:flex; flex-wrap:wrap; gap:8px; }
 #inquiry-status { margin:0; color:var(--muted); font-size:13px; }
 @media(max-width:650px) {
@@ -1029,6 +1034,10 @@ body {
     <label class="inquiry-wide"><span class="inquiry-label"><span data-page-copy="song">원곡 링크 (YouTube 등)</span><span class="required-mark" aria-hidden="true">*</span></span><input name="song" type="url" placeholder="https://" required></label>
     <label><span class="inquiry-label"><span data-page-copy="service">신청 타입</span><span class="required-mark" aria-hidden="true">*</span></span><select id="inquiry-service" name="service" required><option value="" data-page-copy="selectOption">선택</option><option value="undecided" data-page-copy="undecided">상담 후 결정</option><option value="Standard">Standard</option><option value="Signature">Signature</option><option value="Original">Original</option></select></label>
     <label><span class="inquiry-label"><span data-page-copy="subtitle">자막 언어</span><span class="required-mark" aria-hidden="true">*</span></span><select name="subtitle" required><option value="" data-page-copy="selectOption">선택</option><option value="ko" data-page-copy="subtitleKo">한국어</option><option value="ja" data-page-copy="subtitleJa">일본어</option><option value="en" data-page-copy="subtitleEn">영어</option></select></label>
+    <section class="inquiry-wide inquiry-quote" aria-labelledby="inquiry-quote-title">
+      <h3 id="inquiry-quote-title">PRICE에서 가져온 추가 옵션</h3>
+      <div id="inquiry-quote-details" aria-live="polite"></div>
+    </section>
     <label class="inquiry-wide"><span class="inquiry-label"><span data-page-copy="assets">자료 링크 (Google Drive)</span><span class="required-mark" aria-hidden="true">*</span></span><input name="assets" type="url" placeholder="https://drive.google.com/" required></label>
     <label><span data-page-copy="date">희망 마감일</span><input name="date" type="date"></label>
     <label class="inquiry-wide"><span data-page-copy="reference">참고 자료 링크</span><input name="reference" inputmode="url"></label>
@@ -1240,6 +1249,7 @@ function applyLanguage(locale) {
   );
   syncControls();
   translateCommerce(locale);
+  renderInquiryQuote();
 }
 localeButtons.forEach(button => button.addEventListener('click',() => {
   applyLanguage(button.dataset.lang);
@@ -1916,7 +1926,7 @@ function draftInquiry() {
     if (field instanceof HTMLSelectElement) value=field.selectedOptions[0].textContent;
     rows.push(inquiryLabel(key)+' / '+value);
   }
-  if (inquiryQuoteTier === service.toLowerCase() && inquiryQuoteTier) rows.push(quoteTransferText());
+  if (hasInquiryQuote(service)) rows.push(quoteTransferText());
   return rows.join('\n\n');
 }
 
@@ -2012,6 +2022,42 @@ function buildQuote(q,copy,labels) {
   if(original&&(vocals||over)) notes.push(labels.originalExtras);
   return {items,notes,total:items.reduce((sum,item)=>sum+item.amount,0)};
 }
+const inquiryQuoteCopy = {
+  ko: {title:'PRICE에서 가져온 추가 옵션', empty:'PRICE에서 견적을 구성하고 ‘이 구성으로 문의 작성’을 누르면 여기에서 확인할 수 있습니다.', mismatch:'PRICE에서 가져온 제작 타입은 {tier}입니다. 신청 타입을 {tier}로 선택하면 옵션이 반영됩니다.'},
+  ja: {title:'PRICEから引き継いだ追加オプション', empty:'PRICEで見積もりを作成し、「この内容で問い合わせる」を押すと、ここで確認できます。', mismatch:'PRICEから引き継いだプランは{tier}です。申込プランで{tier}を選択するとオプションが反映されます。'},
+  en: {title:'Additional options from PRICE', empty:'Build an estimate in PRICE and choose “Continue to contact with this quote” to see your options here.', mismatch:'The imported quote is for {tier}. Select {tier} as your inquiry tier to apply its options.'}
+};
+const inquiryQuoteTitle = document.getElementById('inquiry-quote-title');
+const inquiryQuoteDetails = document.getElementById('inquiry-quote-details');
+
+function hasInquiryQuote(service) {
+  return Boolean(inquiryQuoteTier && inquiryQuote && service?.toLowerCase() === inquiryQuoteTier);
+}
+
+function renderInquiryQuote() {
+  const messages = inquiryQuoteCopy[homeLocale];
+  inquiryQuoteTitle.textContent = messages.title;
+  if (!hasInquiryQuote(inquiryService.value)) {
+    const message = inquiryQuoteTier
+      ? messages.mismatch.replaceAll('{tier}', inquiryQuoteTier.toUpperCase())
+      : messages.empty;
+    inquiryQuoteDetails.innerHTML = '<p>'+safeText(message)+'</p>';
+    return;
+  }
+  const copy = quoteCopy[homeLocale], labels = quoteUi[homeLocale];
+  const {items, notes} = buildQuote(inquiryQuote, copy, labels);
+  const options = items.slice(1);
+  inquiryQuoteDetails.innerHTML =
+    '<p>'+safeText([inquiryQuoteTier.toUpperCase(), copy.vocalist+' '+inquiryQuote.vocalists, copy.duration+' '+durationLabel(inquiryQuote.duration)].join(' · '))+'</p>'+
+    (options.length
+      ? '<ul>'+options.map(({label}) => '<li>'+safeText(label)+'</li>').join('')+'</ul>'
+      : '<p>'+safeText(labels.noAddons)+'</p>')+
+    notes.map(note => '<p>'+safeText(note)+'</p>').join('');
+}
+
+inquiryService.addEventListener('change', renderInquiryQuote);
+window.addEventListener('pageshow', renderInquiryQuote);
+
 function quoteTransferText() {
   const copy=quoteCopy[homeLocale], labels=quoteUi[homeLocale];
   const result=buildQuote(inquiryQuote,copy,labels);
@@ -2230,9 +2276,10 @@ function markSection() {
   if (contactPage.hidden && inquiryDialog.open) inquiryDialog.close();
   if (contactPage.hidden && inquiryErrorDialog.open) inquiryErrorDialog.close();
   if (contactMatch?.[1]) inquiryService.value = contactMatch[1][0].toUpperCase() + contactMatch[1].slice(1);
-  if (view === 'contact') syncInquiryValidity();
   if (view === 'contact') {
     if (hash === '#contact') inquiryQuoteTier=undefined;
+    renderInquiryQuote();
+    syncInquiryValidity();
   }
   if (priceMatch?.[1]) {
     selectQuoteTier(priceMatch[1]);
