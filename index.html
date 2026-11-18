@@ -143,7 +143,7 @@ body { --header-height:94px; }
 html[lang="ja"] body { font-family:"Plus Jakarta Sans","Noto Sans JP","Noto Sans KR",sans-serif; }
 @media(max-width:920px) {
   body {
-    --header-height:100px;
+    --header-height:60px;
     --mobile-header-surface:#0e0f0b;
     --floating-button-size:45px;
     --floating-button-inset:25px;
@@ -153,12 +153,13 @@ html[lang="ja"] body { font-family:"Plus Jakarta Sans","Noto Sans JP","Noto Sans
   .hero-header { padding:0; }
   .hero-header .container {
     width:100%;
-    grid-template-columns:minmax(0,1fr);
-    grid-template-rows:56px 44px;
-    gap:0;
+    grid-template-columns:auto minmax(0,1fr);
+    grid-template-rows:1fr;
+    gap:clamp(7px, 2vw, 20px);
+    padding-inline:clamp(8px, 2.5vw, 20px);
   }
-  .hero-header .home-link { justify-self:start; margin-inline-start:14px; }
-  .hero-header .home-link .logo { display:block; width:38px; height:38px; }
+  .hero-header .home-link { display:grid; align-items:center; min-height:44px; }
+  .hero-header .home-link .logo { display:block; width:clamp(56px, 18vw, 104px); height:auto; }
   .hero-header .controls { position:fixed; inset-inline-end:var(--floating-button-inset); bottom:var(--mobile-menu-bottom); }
   .top { right:var(--floating-button-inset); bottom:var(--floating-button-inset); width:var(--floating-button-size); height:var(--floating-button-size); }
   #menu-toggle {
@@ -247,17 +248,17 @@ html[lang="ja"] .hero-header #primary-nav {
 .about-social a { padding:9px 14px; border:1px solid var(--line); font-size:13px; }
 @media(max-width:920px) {
   .hero-header #primary-nav {
-    grid-column:1 / -1;
-    grid-row:2;
+    grid-column:2;
+    grid-row:1;
     width:100%;
+    min-width:0;
     height:100%;
     justify-content:space-between;
     align-items:center;
     gap:4px;
-    padding-inline:14px;
-    background:var(--mobile-header-surface);
-    font-size:clamp(10px, 3.1vw, 13px);
-    letter-spacing:.04em;
+    padding:0;
+    font-size:clamp(9px, 2.8vw, 13px);
+    letter-spacing:.02em;
   }
   .hero-header #primary-nav a { display:grid; align-items:center; min-height:44px; }
 }
@@ -288,6 +289,7 @@ body.light #primary-nav a:hover { color:#171812; }
 body.light #primary-nav a[aria-current] { color:var(--accent); }
 @media(max-width:920px) {
   body.light { --mobile-header-surface:#f5f5f0; }
+  .hero-header, body.light .hero-header { background:var(--mobile-header-surface); }
 }
 .sample-heading { display:flex; align-items:baseline; justify-content:flex-start; gap:10px; }
 .portfolio-more { font-size:12px; font-weight:700; letter-spacing:.06em; white-space:nowrap; }
@@ -934,10 +936,7 @@ body {
 <header class="hero-header">
   <div class="container">
     <a class="home-link" href="#top" aria-label="STUDIO DW">
-      <picture>
-        <source media="(max-width: 920px)" srcset="./apple-touch-icon.png">
-        <img class="logo" src="https://raw.githubusercontent.com/studiodwofficial-a11y/StudioDW_Web/main/Text%20Logo.png" alt="STUDIO DW">
-      </picture>
+      <img class="logo" src="https://raw.githubusercontent.com/studiodwofficial-a11y/StudioDW_Web/main/Text%20Logo.png" alt="STUDIO DW">
     </a>
     <nav class="pill" id="primary-nav" aria-label="Navigation">
       <a href="#services-page">SERVICES</a><a href="#portfolio">PORTFOLIO</a><a href="#price">PRICE</a><a href="#contact">CONTACT</a>
