@@ -355,7 +355,7 @@ body.light .inquiry-form select option { background:#f5f5ef; color:#151515; }
 .price-panel:last-child { width:100%; clip-path:polygon(var(--cut) 0,100% 0,100% 100%,0 100%); }
 .price-panel-media { position:absolute; inset:0; z-index:-2; background:linear-gradient(135deg,#323831,#181b19 70%); }
 .price-panel[data-tier="original"] .price-panel-media { background:radial-gradient(ellipse at 83% 10%,#464a40,#181b19 70%); }
-.price-panel-media img,.price-panel-media video {
+.price-panel-media video {
   display:block; width:100%; height:100%; position:absolute; inset:0; object-fit:cover;
   filter:grayscale(1); transition:filter .28s ease, opacity .28s ease;
 }
@@ -379,7 +379,7 @@ body.light .inquiry-form select option { background:#f5f5ef; color:#151515; }
   .price-panel-description, .price-panel[data-tier="original"] .price-panel-note { min-height:0; }
 }
 @media(prefers-reduced-motion:reduce) {
-  .price-panel-media img,.price-panel-media video { transition:none; }
+  .price-panel-media video { transition:none; }
 }
 
 .site-footer .about-social {
@@ -444,8 +444,8 @@ body.light .footer-brand .logo { filter:drop-shadow(0 1px 2px #b6b9a9) drop-shad
   font-weight:600; font-synthesis:none; letter-spacing:-.035em; font-variant-numeric:tabular-nums;
 }
 .price-panel[data-tier="original"] .price-panel-note { min-height:0; }
-@media(hover:hover) { .price-panel:hover .price-panel-media img,.price-panel:hover .price-panel-media video { filter:grayscale(0); } }
-.price-panel:focus-within .price-panel-media img { filter:grayscale(0); }
+
+
 .quote-calculator { padding-block:clamp(42px,7vw,90px); scroll-margin-top:calc(var(--header-height) + 12px); }
 .quote-calculator h2 { font-size:clamp(25px,3.6vw,44px); margin:6px 0 10px; }
 .quote-calculator p { line-height:1.65; }
@@ -982,8 +982,8 @@ body {
 <!-- //수정: PRICE 카드의 기본 금액은 아래 스크립트의 quoteRates.packages에서 자동 표시됩니다.// -->
   <div class="price-panels" aria-label="PRICE">
   <article class="price-panel" data-tier="standard">
-    <div class="price-panel-media" aria-hidden="true"><img src="https://i.ytimg.com/vi/PNCAguZHw4s/maxresdefault.jpg" alt="">
-      <video muted playsinline loop preload="none" data-src="./media/price-standard.mp4"></video>
+    <div class="price-panel-media" aria-hidden="true">
+      <video muted playsinline loop preload="auto" data-src="./Standrad_Sample.mp4"></video>
     </div>
     <div class="price-panel-content">
       <h2 id="price-standard-title">STANDARD</h2>
@@ -995,8 +995,8 @@ body {
   </article>
 
   <article class="price-panel" data-tier="signature">
-    <div class="price-panel-media" aria-hidden="true"><img src="https://i.ytimg.com/vi/d8gpvOLW9cw/maxresdefault.jpg" alt="">
-      <video muted playsinline loop preload="none" data-src="./media/price-signature.mp4"></video>
+    <div class="price-panel-media" aria-hidden="true">
+      <video muted playsinline loop preload="auto" data-src="./Signature_Sample.mp4"></video>
     </div>
     <div class="price-panel-content">
       <p class="price-recommended" data-page-copy="recommended">추천</p>
@@ -1010,7 +1010,7 @@ body {
 
   <article class="price-panel" data-tier="original">
     <div class="price-panel-media" aria-hidden="true">
-      <video muted playsinline loop preload="none" data-src="./media/price-original.mp4"></video>
+      <video muted playsinline loop preload="auto" data-src="./Original_Sample.mp4"></video>
     </div>
     <div class="price-panel-content">
       <h2 id="price-original-title">ORIGINAL</h2>
@@ -2250,7 +2250,7 @@ pricePanels.forEach(panel => {
   panel.video.addEventListener('loadeddata',() => panel.card.classList.add('has-frame'));
   panel.video.addEventListener('playing',() => {
     if (!panel.requested || pricePage.hidden) { pausePriceVideo(panel); return; }
-    panel.card.classList.add('is-playing');
+    panel.card.classList.add('has-frame', 'is-playing');
   });
   panel.video.addEventListener('pause',() => panel.card.classList.remove('is-playing'));
   panel.video.addEventListener('error',() => {
@@ -2281,7 +2281,13 @@ function markSection() {
   servicesPage.hidden = view !== 'services';
   portfolioPage.hidden = view !== 'portfolio';
   pricePage.hidden = view !== 'price';
-  if (view !== 'price') pricePanels.forEach(pausePriceVideo);
+  pricePanels.forEach(panel => {
+    if (view !== 'price') {
+      pausePriceVideo(panel);
+    } else if (!panel.video.hasAttribute('src')) {
+      panel.video.src = panel.video.dataset.src;
+    }
+  });
   contactPage.hidden = view !== 'contact';
   if (contactPage.hidden && inquiryDialog.open) inquiryDialog.close();
   if (contactPage.hidden && inquiryErrorDialog.open) inquiryErrorDialog.close();
