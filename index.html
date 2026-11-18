@@ -729,13 +729,6 @@ body.light .required-mark { color:#a52131; }
 #contact-page .credit-switch-options input:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 @media(prefers-reduced-motion:reduce) { #contact-page .credit-switch-options input::before { transition:none; } }
 
-.work-review { margin:20px 0; padding:17px 19px; border:1px solid var(--line); border-radius:14px; }
-.portfolio-detail .work-review h2 { flex:1; min-width:0; margin:0; font-size:16px; overflow-wrap:anywhere; }
-.work-review p { margin:10px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; }
-.work-review .review-empty { font-size:13px; }
-.reviewer { display:flex; gap:12px; align-items:center; }
-.portfolio-detail .reviewer-link { margin:0 0 0 auto; display:grid; place-items:center; flex:0 0 36px; height:36px; border:1px solid var(--line); border-radius:50%; }
-.portfolio-detail .reviewer-link:hover,.portfolio-detail .reviewer-link:focus-visible { color:var(--accent); border-color:var(--accent); }
 
 .inquiry-validation { flex:1 0 100%; max-width:42rem; margin:3px auto 0; color:var(--muted); font-size:12px; }
 .inquiry-validation p { margin:0 0 7px; text-align:center; }
@@ -1570,7 +1563,6 @@ let portfolioPageNumber = 1;
 const fetchedTitles = new Map();
 const titleRequests = new Map();
 let archiveTitleRequest;
-const fetchedUploaders = new Map();
 
 function requestVideoTitle(item) {
   const id = item.youtubeId;
@@ -1579,10 +1571,7 @@ function requestVideoTitle(item) {
     const request = Promise.resolve().then(async () => {
       const response = await fetch('https://www.youtube.com/oembed?'+params,{signal:AbortSignal.timeout(8000)});
       if (!response.ok) return;
-      const {title,author_name:authorName,author_url:authorUrl} = await response.json();
-      const name = typeof authorName === 'string' ? authorName.trim() : '';
-      const channel = youtubeChannelUrl(authorUrl);
-      if (name || channel) fetchedUploaders.set(id,{name,channel});
+      const {title} = await response.json();
       if (typeof title === 'string' && title.trim()) fetchedTitles.set(id,title.trim());
     }).catch(() => {});
     titleRequests.set(id,request);
@@ -1642,55 +1631,6 @@ function refreshPortfolioResults() {
     button.setAttribute('aria-pressed',String(button.dataset.filter === portfolioFilter))
   );
 }
-//수정: 고객 리뷰, 활동명과 채널 링크는 아래 portfolioReviews에 해당 작품의 youtubeId를 키로 등록합니다. 활동명을 생략하면 YouTube 채널명이 표시됩니다.//
-const portfolioReviews = {
-  //수정: 등록 예시 "VIDEO_ID": { clientReview:"리뷰 원문", clientName:"고객 활동명", clientChannelUrl:"https://www.youtube.com/@channel" },//
-};
-const uploadChannelLabels={ko:'업로드 채널',ja:'投稿チャンネル',en:'Upload channel'};
-const channelLinkLabels={ko:'채널 열기',ja:'チャンネルを開く',en:'Open channel'};
-const emptyReviewLabels={ko:'아직 등록된 고객 리뷰가 없습니다.',ja:'まだお客様のレビューは登録されていません。',en:'No client review has been added yet.'};
-
-function safePublicUrl(value) {
-  if (typeof value !== 'string') return '';
-  const url=value.trim();
-  try { return new URL(url).protocol === 'https:' ? url : ''; }
-  catch { return ''; }
-}
-
-function youtubeChannelUrl(value) {
-  const safeUrl=safePublicUrl(value);
-  if (!safeUrl) return '';
-  const url=new URL(safeUrl);
-  if (!['youtube.com','www.youtube.com','m.youtube.com'].includes(url.hostname)) return '';
-  const [first, second]=url.pathname.split('/').filter(Boolean);
-  if (first?.startsWith('@') && first.length > 1) return url.origin+'/'+first;
-  if (first==='channel' && /^UC[A-Za-z0-9_-]{22}$/.test(second || '')) return url.origin+'/channel/'+second;
-  if (['user','c'].includes(first) && second) return url.origin+'/'+first+'/'+second;
-  return '';
-}
-
-function renderWorkReview(item) {
-  const recorded=Object.hasOwn(portfolioReviews,item.youtubeId) ? portfolioReviews[item.youtubeId] : {};
-  const uploader=fetchedUploaders.get(item.youtubeId);
-  const review=String(recorded.clientReview ?? item.clientReview ?? '').trim();
-  const registeredChannel=safePublicUrl(recorded.clientChannelUrl) ||
-    safePublicUrl(item.clientChannelUrl) || safePublicUrl(item.clientPlatformUrl);
-  const channel=registeredChannel || uploader?.channel;
-  const author=recorded.clientName?.trim() || item.clientName?.trim() || uploader?.name ||
-    uploadChannelLabels[homeLocale];
-  return '<section class="work-review"><div class="reviewer">'+
-    '<h2>'+safeText(author)+'</h2>'+
-    (channel ? '<a class="reviewer-link" href="'+safeText(channel)+'" target="_blank" rel="noopener noreferrer" aria-label="'+safeText(channelLinkLabels[homeLocale])+'">↗</a>' : '')+
-    '</div>'+
-    (review ? '<p>'+safeText(review)+'</p>' : '<p class="review-empty">'+safeText(emptyReviewLabels[homeLocale])+'</p>')+
-    '</section>';
-}
-function updateWorkReview(item) {
-  const slot=document.getElementById('work-review-slot');
-  if (!slot) return;
-  slot.innerHTML=renderWorkReview(item);
-}
-
 function renderPortfolio() {
   const copy = portfolioLabels[homeLocale];
   if (location.hash.startsWith('#work/')) {
@@ -1707,13 +1647,10 @@ function renderPortfolio() {
       '<p class="eyebrow" id="detail-category">'+safeText(portfolioFilters[workCategory(item)] || workCategory(item))+' · '+safeText(item.date)+'</p><h1>'+title+'</h1>'+
       '<iframe src="https://www.youtube-nocookie.com/embed/'+videoId+'" title="'+title+'" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>'+
       '<a href="https://www.youtube.com/watch?v='+videoId+'" target="_blank" rel="noopener">'+copy.external+'</a>'+
-      '<div id="work-review-slot"></div>'+
       (notes ? '<h2>'+copy.notes+'</h2><p>'+safeText(notes)+'</p>' : '')+
       '</section>';
-    updateWorkReview(item);
     requestVideoTitle(item).then(() => {
       if (location.hash !== '#work/'+item.id) return;
-      updateWorkReview(item);
       if (!fetchedTitles.has(item.youtubeId)) return;
       const heading = portfolioPage.querySelector('.portfolio-detail h1');
       if (heading) {
