@@ -98,6 +98,7 @@ body { --header-height:94px; }
 }
 .hero-header .container { display:grid; grid-template-columns:1fr auto 1fr; }
 .hero-header .controls { justify-self:end; align-items:center; }
+.header-settings { display:flex; align-items:center; gap:12px; }
 .hero-header button { min-height:34px; }
 .hero-header a:focus-visible, .hero-header button:focus-visible { outline-color:#d9f779; }
 #primary-nav { padding:7px 20px; gap:28px; background:#0e0f0b55; }
@@ -141,24 +142,33 @@ body { --header-height:94px; }
 .companies small:empty { display:none; }
 html[lang="ja"] body { font-family:"Plus Jakarta Sans","Noto Sans JP","Noto Sans KR",sans-serif; }
 @media(max-width:920px) {
-  body { --header-height:74px; }
+  body { --header-height:100px; }
   .hero-header { padding:0; }
-  .hero-header .container { grid-template-columns:1fr auto; position:relative; }
-  #menu-toggle { display:inline-block; }
-  #primary-nav { display:none; }
-  #primary-nav.is-open {
-    display:flex;
-    position:absolute;
-    top:100%;
-    inset-inline:0;
-    justify-content:space-around;
-    gap:12px;
-    background:#0e0f0bf7;
+  .hero-header .container {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:56px 44px;
+    gap:0;
   }
+  .hero-header .controls { grid-column:2; grid-row:1; position:relative; }
+  #menu-toggle { display:inline-grid; place-items:center; min-width:44px; min-height:44px; }
+  .header-settings {
+    display:none;
+    position:absolute;
+    z-index:1;
+    inset-inline-end:0;
+    top:calc(100% + 6px);
+    width:max-content;
+    max-width:calc(100vw - 28px);
+    padding:10px;
+    flex-wrap:wrap;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#0e0f0b;
+  }
+  .header-settings.is-open { display:flex; }
 }
 @media(max-width:600px) {
-  .hero-header .container { width:calc(100% - 28px); gap:8px; }
-  .hero-header .controls { gap:5px; }
+  .hero-header .container { width:calc(100% - 28px); }
   .hero-header .logo { width:94px; }
   #theme, #menu-toggle { padding:5px 7px; font-size:11px; }
   #lang-switcher button { padding-inline:5px; font-size:11px; }
@@ -219,7 +229,19 @@ html[lang="ja"] .hero-header #primary-nav {
 .about-social { display:flex; flex-wrap:wrap; gap:10px; margin-top:26px; }
 .about-social a { padding:9px 14px; border:1px solid var(--line); font-size:13px; }
 @media(max-width:920px) {
-  .hero-header #primary-nav.is-open { background:#0e0f0bf5; gap:20px; padding:8px 12px; }
+  .hero-header #primary-nav {
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+    height:100%;
+    justify-content:space-between;
+    align-items:center;
+    gap:4px;
+    padding-inline:4px;
+    font-size:clamp(10px, 3.1vw, 13px);
+    letter-spacing:.04em;
+  }
+  .hero-header #primary-nav a { display:grid; align-items:center; min-height:44px; }
 }
 @media(max-width:600px) {
   .process { padding-top:52px; }
@@ -247,7 +269,7 @@ body.light #primary-nav a { color:#45483f; }
 body.light #primary-nav a:hover { color:#171812; }
 body.light #primary-nav a[aria-current] { color:var(--accent); }
 @media(max-width:920px) {
-  body.light .hero-header #primary-nav.is-open { background:#f5f5f0fa; }
+  body.light .hero-header .header-settings { background:#f5f5f0; }
 }
 .sample-heading { display:flex; align-items:baseline; justify-content:flex-start; gap:10px; }
 .portfolio-more { font-size:12px; font-weight:700; letter-spacing:.06em; white-space:nowrap; }
@@ -421,7 +443,6 @@ body.light .inquiry-form select option { background:#f5f5ef; color:#151515; }
   .price-panel:first-child { padding-top:var(--header-height); }
 }
 @media(max-width:600px) {
-  .hero-header #primary-nav.is-open { gap:10px; flex-wrap:wrap; }
   .site-footer .about-social { gap:7px; }
 }
 
@@ -899,13 +920,15 @@ body {
       <a href="#services-page">SERVICES</a><a href="#portfolio">PORTFOLIO</a><a href="#price">PRICE</a><a href="#contact">CONTACT</a>
     </nav>
     <div class="controls">
-      <button type="button" id="theme" aria-pressed="false">☼ 화이트모드</button>
-      <div id="lang-switcher" role="group" aria-label="Language">
-        <button type="button" data-lang="ko" aria-label="한국어" aria-pressed="true">KR</button>
-        <button type="button" data-lang="ja" aria-label="日本語" aria-pressed="false">JP</button>
-        <button type="button" data-lang="en" aria-label="English" aria-pressed="false">EN</button>
+      <button type="button" id="menu-toggle" aria-controls="header-settings" aria-expanded="false" aria-label="Menu"><span aria-hidden="true">☰</span></button>
+      <div class="header-settings" id="header-settings">
+        <button type="button" id="theme" aria-pressed="false">☼ 화이트모드</button>
+        <div id="lang-switcher" role="group" aria-label="Language">
+          <button type="button" data-lang="ko" aria-label="한국어" aria-pressed="true">KR</button>
+          <button type="button" data-lang="ja" aria-label="日本語" aria-pressed="false">JP</button>
+          <button type="button" data-lang="en" aria-label="English" aria-pressed="false">EN</button>
+        </div>
       </div>
-      <button type="button" id="menu-toggle" aria-controls="primary-nav" aria-expanded="false" aria-label="Menu"><span aria-hidden="true">☰</span></button>
     </div>
   </div>
 </header>
@@ -1204,6 +1227,8 @@ const homeLocaleKey = 'studio_dw_lang_v3';
 const themeKey = 'studio-dw-theme';
 const localeButtons = document.querySelectorAll('[data-lang]');
 const menu = document.getElementById('menu-toggle');
+const headerSettings = document.getElementById('header-settings');
+const mobileHeader = window.matchMedia('(max-width: 920px)');
 const nav = document.getElementById('primary-nav');
 const theme = document.getElementById('theme');
 const heroReels = [...document.querySelectorAll('.hero-reel')];
@@ -1265,11 +1290,15 @@ theme.addEventListener('click',() => {
   save(themeKey,light ? 'light' : 'dark');
 });
 function setMenu(open) {
-  nav.classList.toggle('is-open',open);
+  headerSettings.classList.toggle('is-open',open);
   menu.setAttribute('aria-expanded',String(open));
 }
 menu.addEventListener('click',() => setMenu(menu.getAttribute('aria-expanded') !== 'true'));
-nav.querySelectorAll('a').forEach(link => link.addEventListener('click',() => setMenu(false)));
+mobileHeader.addEventListener('change', () => setMenu(false));
+document.addEventListener('click', event => {
+  if (menu.getAttribute('aria-expanded') !== 'true') return;
+  if (!menu.contains(event.target) && !headerSettings.contains(event.target)) setMenu(false);
+});
 document.addEventListener('keydown',event => {
   if (event.key === 'Escape' && menu.getAttribute('aria-expanded') === 'true') {
     setMenu(false);
