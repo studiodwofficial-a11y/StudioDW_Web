@@ -142,35 +142,52 @@ body { --header-height:94px; }
 .companies small:empty { display:none; }
 html[lang="ja"] body { font-family:"Plus Jakarta Sans","Noto Sans JP","Noto Sans KR",sans-serif; }
 @media(max-width:920px) {
-  body { --header-height:100px; }
+  body {
+    --header-height:100px;
+    --mobile-header-surface:#0e0f0b;
+    --floating-button-size:45px;
+    --floating-button-inset:25px;
+    --floating-button-gap:8px;
+    --mobile-menu-bottom:calc(var(--floating-button-inset) + var(--floating-button-size) + var(--floating-button-gap));
+  }
   .hero-header { padding:0; }
   .hero-header .container {
-    grid-template-columns:minmax(0,1fr) auto;
+    width:100%;
+    grid-template-columns:minmax(0,1fr);
     grid-template-rows:56px 44px;
     gap:0;
   }
-  .hero-header .controls { grid-column:2; grid-row:1; position:relative; }
-  #menu-toggle { display:inline-grid; place-items:center; min-width:44px; min-height:44px; }
+  .hero-header .home-link { justify-self:start; margin-inline-start:14px; }
+  .hero-header .home-link .logo { display:block; width:38px; height:38px; }
+  .hero-header .controls { position:fixed; inset-inline-end:var(--floating-button-inset); bottom:var(--mobile-menu-bottom); }
+  .top { right:var(--floating-button-inset); bottom:var(--floating-button-inset); width:var(--floating-button-size); height:var(--floating-button-size); }
+  #menu-toggle {
+    display:inline-grid;
+    place-items:center;
+    width:var(--floating-button-size);
+    height:var(--floating-button-size);
+    padding:0;
+    background:var(--mobile-header-surface);
+    font-size:19px;
+  }
   .header-settings {
     display:none;
     position:absolute;
     z-index:1;
     inset-inline-end:0;
-    top:calc(100% + 6px);
+    bottom:calc(100% + var(--floating-button-gap));
     width:max-content;
     max-width:calc(100vw - 28px);
     padding:10px;
     flex-wrap:wrap;
     border:1px solid var(--line);
     border-radius:12px;
-    background:#0e0f0b;
+    background:var(--mobile-header-surface);
   }
   .header-settings.is-open { display:flex; }
 }
 @media(max-width:600px) {
-  .hero-header .container { width:calc(100% - 28px); }
-  .hero-header .logo { width:94px; }
-  #theme, #menu-toggle { padding:5px 7px; font-size:11px; }
+  #theme { padding:5px 7px; font-size:11px; }
   #lang-switcher button { padding-inline:5px; font-size:11px; }
   .companies { grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px 18px; }
   .scroll { bottom:22px; left:20px; transform:none; }
@@ -237,7 +254,8 @@ html[lang="ja"] .hero-header #primary-nav {
     justify-content:space-between;
     align-items:center;
     gap:4px;
-    padding-inline:4px;
+    padding-inline:14px;
+    background:var(--mobile-header-surface);
     font-size:clamp(10px, 3.1vw, 13px);
     letter-spacing:.04em;
   }
@@ -269,7 +287,7 @@ body.light #primary-nav a { color:#45483f; }
 body.light #primary-nav a:hover { color:#171812; }
 body.light #primary-nav a[aria-current] { color:var(--accent); }
 @media(max-width:920px) {
-  body.light .hero-header .header-settings { background:#f5f5f0; }
+  body.light { --mobile-header-surface:#f5f5f0; }
 }
 .sample-heading { display:flex; align-items:baseline; justify-content:flex-start; gap:10px; }
 .portfolio-more { font-size:12px; font-weight:700; letter-spacing:.06em; white-space:nowrap; }
@@ -915,7 +933,12 @@ body {
 
 <header class="hero-header">
   <div class="container">
-    <a href="#top" aria-label="STUDIO DW"><img class="logo" src="https://raw.githubusercontent.com/studiodwofficial-a11y/StudioDW_Web/main/Text%20Logo.png" alt="STUDIO DW"></a>
+    <a class="home-link" href="#top" aria-label="STUDIO DW">
+      <picture>
+        <source media="(max-width: 920px)" srcset="./apple-touch-icon.png">
+        <img class="logo" src="https://raw.githubusercontent.com/studiodwofficial-a11y/StudioDW_Web/main/Text%20Logo.png" alt="STUDIO DW">
+      </picture>
+    </a>
     <nav class="pill" id="primary-nav" aria-label="Navigation">
       <a href="#services-page">SERVICES</a><a href="#portfolio">PORTFOLIO</a><a href="#price">PRICE</a><a href="#contact">CONTACT</a>
     </nav>
