@@ -546,6 +546,9 @@ body.light .quote-dialog { background:var(--form-surface); }
 .inquiry-dialog-draft { display:grid; gap:6px; font-size:12px; }
 .inquiry-dialog-draft textarea { width:100%; border:1px solid var(--form-border); border-radius:10px; background:var(--form-field); color:inherit; padding:10px; resize:vertical; font:inherit; }
 .inquiry-dialog form { margin-top:11px; }
+.inquiry-dialog .inquiry-dialog-actions { display:flex; flex-wrap:wrap; gap:8px; }
+#inquiry-complete-dialog .commerce-action.secondary { color:inherit; background:transparent; border-color:var(--line); }
+#inquiry-complete-dialog .commerce-action.secondary:hover { border-color:var(--accent); }
 @media(max-width:840px) { .contact-layout { grid-template-columns:1fr; } }
 @media(prefers-reduced-motion:reduce) { .inquiry-complete { animation:none; } }
 
@@ -1089,7 +1092,7 @@ body {
     </div>
     <p class="reply-note" data-page-copy="replyTime">※24시간 이내 회신 예정입니다.</p>
     <label class="inquiry-dialog-draft"><span id="inquiry-draft-status" role="status" data-page-copy="selectDraft">작성한 양식을 선택해 복사할 수 있습니다.</span><textarea id="inquiry-message" rows="5" readonly></textarea></label>
-    <form method="dialog"><button type="submit" class="commerce-action" data-page-copy="closeDialog" autofocus>닫기</button></form>
+    <form method="dialog" class="inquiry-dialog-actions"><button type="button" class="commerce-action" id="inquiry-copy-draft" data-page-copy="copyDraft">복사</button><button type="submit" class="commerce-action secondary" data-page-copy="closeDialog" autofocus>닫기</button></form>
   </dialog>
 </main>
 <footer class="site-footer">
@@ -1726,6 +1729,7 @@ const commerceStrings = {
   orderNotice:['当サイトでは注文や決済を受け付けておりません','This site does not accept orders or payments'],
   sendNotice:['ご記入のフォームを以下の方法でお送りください。','Please send your completed form using one of the options below.'],
   replyTime:['※24時間以内に返信予定です。','We expect to reply within 24 hours.'],
+  copyDraft:['コピー','Copy'],
   selectDraft:['記入済みのフォームを選択してコピーできます。','You can select and copy your completed form.'],
   closeDialog:['閉じる','Close'],
   formTitle:['申込フォーム','Project inquiry form'],
@@ -1943,7 +1947,20 @@ const copySuccess={
   en:'Your completed form has been copied.'
 };
 let inquirySubmission=0;
-inquiry.addEventListener('submit',async event => {
+async function copyInquiryDraft(selectOnFailure=false) {
+  const submission=inquirySubmission;
+  try {
+    await navigator.clipboard.writeText(inquiryMessage.value);
+    if (submission===inquirySubmission && inquiryDialog.open) inquiryDraftStatus.textContent=copySuccess[homeLocale];
+  } catch {
+    if (selectOnFailure && submission===inquirySubmission && inquiryDialog.open) {
+      inquiryMessage.focus();
+      inquiryMessage.select();
+    }
+  }
+}
+document.getElementById('inquiry-copy-draft').addEventListener('click', () => copyInquiryDraft(true));
+inquiry.addEventListener('submit', event => {
   event.preventDefault();
   const issues=collectInquiryIssues();
   if (!syncInquiryValidity(issues)) {
@@ -1951,20 +1968,14 @@ inquiry.addEventListener('submit',async event => {
     if (!inquiryErrorDialog.open) inquiryErrorDialog.showModal();
     return;
   }
-  const submission=++inquirySubmission;
-  const draft=draftInquiry();
-  inquiryMessage.value=draft;
+  inquirySubmission++;
+  inquiryMessage.value=draftInquiry();
   const draftCopy=commerceStrings.selectDraft;
   inquiryDraftStatus.textContent=homeLocale==='ko'
     ?'작성한 양식을 선택해 복사할 수 있습니다.'
     :draftCopy[homeLocale==='ja'?0:1];
   inquiryDialog.showModal();
-  try {
-    await navigator.clipboard.writeText(draft);
-    if (submission===inquirySubmission && inquiryDialog.open) inquiryDraftStatus.textContent=copySuccess[homeLocale];
-  } catch {
-    //수정: 클립보드 복사에 실패하면 팝업에 표시된 양식을 직접 복사할 수 있습니다.//
-  }
+  copyInquiryDraft();
 });
 
 //수정: 금액은 원 단위 숫자로 입력합니다. packages는 PRICE 카드와 견적 기본 금액, 나머지는 옵션별 계산과 금액 표시를 함께 바꿉니다.//
