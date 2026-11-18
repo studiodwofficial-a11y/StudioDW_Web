@@ -109,7 +109,8 @@ body { --header-height:94px; }
 #menu-toggle { display:none; }
 #services, #portfolio, #contact { scroll-margin-top:var(--header-height); }
 .hero > .container { padding-top:calc(var(--header-height) / 2); }
-#hero-reel { position:absolute; inset:0; z-index:-2; width:100%; height:100%; object-fit:cover; }
+.hero-reel { position:absolute; inset:0; z-index:-2; width:100%; height:100%; object-fit:cover; }
+.hero-reel[hidden] { display:block; opacity:0; }
 
 .companies {
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -908,7 +909,7 @@ body {
   </div>
 </header>
 <main id="home-page">
-<section class="hero"><video id="hero-reel" muted playsinline preload="none" aria-hidden="true" hidden></video><div class="container"><h1><span class="hero-lead">하고싶은 일을 하는 당신에게</span><br><span class="hero-accent">프레임 속 하나의 세계를.</span></h1><p>여러분의 모든 창작활동이 즐거울 수 있도록, 최선을 다하고 있습니다. (진짜루)</p></div><a class="scroll" href="#services">제작 서비스 살펴보기 ↓</a></section>
+<section class="hero"><video class="hero-reel" muted playsinline preload="none" aria-hidden="true" hidden></video><video class="hero-reel" muted playsinline preload="none" aria-hidden="true" hidden></video><div class="container"><h1><span class="hero-lead">하고싶은 일을 하는 당신에게</span><br><span class="hero-accent">프레임 속 하나의 세계를.</span></h1><p>여러분의 모든 창작활동이 즐거울 수 있도록, 최선을 다하고 있습니다. (진짜루)</p></div><a class="scroll" href="#services">제작 서비스 살펴보기 ↓</a></section>
 <div class="container">
 
 <section id="services" aria-label="MV/PV 제작 서비스">
@@ -1200,14 +1201,17 @@ const localeButtons = document.querySelectorAll('[data-lang]');
 const menu = document.getElementById('menu-toggle');
 const nav = document.getElementById('primary-nav');
 const theme = document.getElementById('theme');
-const reel = document.getElementById('hero-reel');
+const heroReels = [...document.querySelectorAll('.hero-reel')];
 const heroReelUrls = [
   './HERO_1.mp4',
   './HERO_2.mp4',
   './HERO_3.mp4',
   './HERO_4.mp4',
 ];
+let activeHeroReel = null;
+let nextHeroReel = heroReels[0];
 let heroReelIndex = 0;
+let heroFrameRequest;
 let heroReelFailures = 0;
 let homeLocale = 'ko';
 let light = stored(themeKey) === 'light';
@@ -2321,36 +2325,77 @@ function markSection() {
   previousHash = hash;
 }
 window.addEventListener('hashchange',markSection);
+function canPlayHeroReel() {
+  return view === 'home' && !motionPreference.matches;
+}
+
+function prepareHeroReel() {
+  nextHeroReel.preload = 'auto';
+  nextHeroReel.src = heroReelUrls[heroReelIndex];
+}
+
 function syncHeroReel() {
-  const canPlay = view === 'home' && !motionPreference.matches &&
-    heroReelFailures < heroReelUrls.length;
-  if (!canPlay) {
-    reel.pause();
-    reel.hidden = true;
+  if (!canPlayHeroReel()) {
+    heroReels.forEach(reel => {
+      reel.pause();
+      reel.hidden = true;
+    });
     return;
   }
-  if (!reel.hasAttribute('src')) reel.src = heroReelUrls[heroReelIndex];
-  if (reel.paused && !reel.ended) reel.play().catch(() => {});
+  if (activeHeroReel && !activeHeroReel.ended && !activeHeroReel.error) {
+    activeHeroReel.hidden = false;
+    activeHeroReel.play().catch(() => {});
+  } else if (heroReelFailures < heroReelUrls.length) {
+    if (activeHeroReel) activeHeroReel.hidden = false;
+    if (!nextHeroReel.hasAttribute('src')) prepareHeroReel();
+    nextHeroReel.play().catch(() => {});
+  }
 }
 
-function advanceHeroReel() {
-  reel.hidden = true;
-  reel.removeAttribute('src');
-  reel.load();
-  heroReelIndex = (heroReelIndex + 1) % heroReelUrls.length;
-  syncHeroReel();
-}
-
-reel.addEventListener('playing', () => {
-  if (view !== 'home' || motionPreference.matches) return;
-  heroReelFailures = 0;
+function showHeroFrame(reel) {
+  if (reel !== nextHeroReel || reel.paused || !canPlayHeroReel()) return;
   reel.hidden = false;
-});
-reel.addEventListener('ended', advanceHeroReel);
-reel.addEventListener('error', () => {
-  if (!reel.hasAttribute('src')) return;
-  heroReelFailures++;
-  advanceHeroReel();
+  if (activeHeroReel) activeHeroReel.hidden = true;
+  activeHeroReel = reel;
+  nextHeroReel = heroReels.find(candidate => candidate !== reel);
+  heroReelFailures = 0;
+  heroReelIndex = (heroReelIndex + 1) % heroReelUrls.length;
+  prepareHeroReel();
+}
+
+heroReels.forEach(reel => {
+  reel.addEventListener('playing', () => {
+    if (reel !== nextHeroReel || !canPlayHeroReel()) return;
+    if (typeof reel.requestVideoFrameCallback === 'function') {
+      if (heroFrameRequest !== undefined) reel.cancelVideoFrameCallback(heroFrameRequest);
+      heroFrameRequest = reel.requestVideoFrameCallback(() => {
+        heroFrameRequest = undefined;
+        showHeroFrame(reel);
+      });
+    } else {
+      showHeroFrame(reel);
+    }
+  });
+  reel.addEventListener('ended', () => {
+    if (reel === activeHeroReel) syncHeroReel();
+  });
+  reel.addEventListener('error', () => {
+    if (reel === activeHeroReel) {
+      syncHeroReel();
+      return;
+    }
+    if (reel !== nextHeroReel) return;
+    if (heroFrameRequest !== undefined) {
+      reel.cancelVideoFrameCallback(heroFrameRequest);
+      heroFrameRequest = undefined;
+    }
+    heroReelFailures++;
+    if (heroReelFailures >= heroReelUrls.length) return;
+    heroReelIndex = (heroReelIndex + 1) % heroReelUrls.length;
+    if (canPlayHeroReel()) prepareHeroReel();
+    else reel.removeAttribute('src');
+    syncHeroReel();
+  });
 });
 motionPreference.addEventListener('change', syncHeroReel);
 const savedLocale = stored(homeLocaleKey);
