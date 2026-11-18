@@ -909,7 +909,7 @@ body {
   </div>
 </header>
 <main id="home-page">
-<section class="hero"><img class="hero-poster" src="https://i.ytimg.com/vi/d8gpvOLW9cw/maxresdefault.jpg" alt="" fetchpriority="high"><video id="hero-reel" muted loop playsinline preload="metadata" aria-hidden="true" hidden></video><div class="container"><h1><span class="hero-lead">하고싶은 일을 하는 당신에게</span><br><span class="hero-accent">프레임 속 하나의 세계를.</span></h1><p>여러분의 모든 창작활동이 즐거울 수 있도록, 최선을 다하고 있습니다. (진짜루)</p></div><a class="scroll" href="#services">제작 서비스 살펴보기 ↓</a></section>
+<section class="hero"><img class="hero-poster" src="https://i.ytimg.com/vi/d8gpvOLW9cw/maxresdefault.jpg" alt="" fetchpriority="high"><video id="hero-reel" muted playsinline preload="none" aria-hidden="true" hidden></video><div class="container"><h1><span class="hero-lead">하고싶은 일을 하는 당신에게</span><br><span class="hero-accent">프레임 속 하나의 세계를.</span></h1><p>여러분의 모든 창작활동이 즐거울 수 있도록, 최선을 다하고 있습니다. (진짜루)</p></div><a class="scroll" href="#services">제작 서비스 살펴보기 ↓</a></section>
 <div class="container">
 
 <section id="services" aria-label="MV/PV 제작 서비스">
@@ -1202,8 +1202,14 @@ const menu = document.getElementById('menu-toggle');
 const nav = document.getElementById('primary-nav');
 const theme = document.getElementById('theme');
 const reel = document.getElementById('hero-reel');
-//수정: HOME HERO 배경 영상을 추가할 때 heroReelUrl에 MP4 경로를 입력합니다.//
-const heroReelUrl = '';
+const heroReelUrls = [
+  './HERO_1.mp4',
+  './HERO_2.mp4',
+  './HERO_3.mp4',
+  './HERO_4.mp4',
+];
+let heroReelIndex = 0;
+let heroReelFailures = 0;
 let homeLocale = 'ko';
 let light = stored(themeKey) === 'light';
 
@@ -2304,9 +2310,8 @@ function markSection() {
   } else {
     portfolioPage.replaceChildren();
   }
-  if (view !== 'home') reel.pause();
+  syncHeroReel();
   if (changed && view === 'home') {
-    if (heroReelUrl && !motionPreference.matches) reel.play().catch(() => {});
     if (hash === '#services') document.getElementById(hash.slice(1)).scrollIntoView();
     else window.scrollTo(0,0);
   }
@@ -2317,12 +2322,38 @@ function markSection() {
   previousHash = hash;
 }
 window.addEventListener('hashchange',markSection);
-reel.addEventListener('loadeddata',() => { reel.hidden = false; });
-reel.addEventListener('error',() => { reel.hidden = true; });
-if (heroReelUrl) {
-  reel.src = heroReelUrl;
-  if (view === 'home' && !motionPreference.matches) reel.play().catch(() => {});
+function syncHeroReel() {
+  const canPlay = view === 'home' && !motionPreference.matches &&
+    heroReelFailures < heroReelUrls.length;
+  if (!canPlay) {
+    reel.pause();
+    reel.hidden = true;
+    return;
+  }
+  if (!reel.hasAttribute('src')) reel.src = heroReelUrls[heroReelIndex];
+  if (reel.paused && !reel.ended) reel.play().catch(() => {});
 }
+
+function advanceHeroReel() {
+  reel.hidden = true;
+  reel.removeAttribute('src');
+  reel.load();
+  heroReelIndex = (heroReelIndex + 1) % heroReelUrls.length;
+  syncHeroReel();
+}
+
+reel.addEventListener('playing', () => {
+  if (view !== 'home' || motionPreference.matches) return;
+  heroReelFailures = 0;
+  reel.hidden = false;
+});
+reel.addEventListener('ended', advanceHeroReel);
+reel.addEventListener('error', () => {
+  if (!reel.hasAttribute('src')) return;
+  heroReelFailures++;
+  advanceHeroReel();
+});
+motionPreference.addEventListener('change', syncHeroReel);
 const savedLocale = stored(homeLocaleKey);
 const browserLocale = navigator.language.split('-')[0];
 applyLanguage(Object.hasOwn(controlsCopy,savedLocale) ? savedLocale : Object.hasOwn(controlsCopy,browserLocale) ? browserLocale : 'en');
